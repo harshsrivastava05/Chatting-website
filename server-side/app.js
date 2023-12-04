@@ -128,12 +128,18 @@ app.get("/api/conversation/:userid", async (req, res) => {
     const conversations = await Conversations.find({
       members: { $in: [userid] },
     });
-    const conversationuserdata = Promise.all(conversations.map(async (conversation) => {
-      const receiverid = conversation.members.find(
-        (member) => member != userid
-      );
-      return await Users.findById(receiverid);
-    }));
+    const conversationuserdata = Promise.all(
+      conversations.map(async (conversation) => {
+        const receiverid = conversation.members.find(
+          (member) => member != userid
+        );
+        const user = await Users.findById(receiverid);
+        return {
+          user: { email: user.email, fullname: user.fullname },
+          conversationId: conversation._id,
+        };
+      })
+    );
     res.status(200).json(await conversationuserdata);
   } catch (error) {
     console.error(error);
