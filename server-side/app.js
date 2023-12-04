@@ -90,9 +90,13 @@ app.post("/api/conversation", async (req, res) => {
   try {
     const { senderid, receiverid } = req.body;
 
-    const existingConversation = await Conversations.findOne({ members: [senderid, receiverid] });
+    const existingConversation = await Conversations.findOne({
+      members: [senderid, receiverid],
+    });
     if (existingConversation) {
-      return res.status(400).send("Conversation already exists between these users");
+      return res
+        .status(400)
+        .send("Conversation already exists between these users");
     }
 
     const sender = await Users.findOne({ _id: senderid });
@@ -114,7 +118,26 @@ app.post("/api/conversation", async (req, res) => {
     res.status(200).send("Conversation created successfully!");
   } catch (error) {
     console.error(error);
-    res.status(500).send("Internal Server Error"); 
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.get("/api/conversation/:userid", async (req, res) => {
+  try {
+    const userid = req.params.userid;
+    const conversations = await Conversations.find({
+      members: { $in: [userid] },
+    });
+    const conversationuserdata = Promise.all(conversations.map(async (conversation) => {
+      const receiverid = conversation.members.find(
+        (member) => member != userid
+      );
+      return await Users.findById(receiverid);
+    }));
+    res.status(200).json(await conversationuserdata);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
