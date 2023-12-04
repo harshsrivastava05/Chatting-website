@@ -3,7 +3,11 @@ const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 require("./db/index"); //connect to DB
+
 const Users = require("./schemas/user");
+const Conversations = require("./schemas/conversation");
+const Messages = require("./schemas/message");
+
 const port = 3000;
 
 const app = express();
@@ -68,25 +72,49 @@ app.post("/api/login", async (req, res, next) => {
     const jwtsecretkey = "this-is-a-secret-key";
     const token = jwt.sign(payload, jwtsecretkey, { expiresIn: "6h" });
 
-    await Users.updateOne(
-      { _id: user._id },
-      {
-        $set: { token },
-      }
-    );
-
-    user.save();
-    next();
-
-    return res
-      .status(200)
-      .json({
-        user: { email: user.email, fullname: user.fullname,pass:user.password, token },
-        token: user.token,
-      });
+    return res.status(200).json({
+      user: {
+        email: user.email,
+        fullname: user.fullname,
+        pass: user.password,
+      },
+      token,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(400).send(error.message);
+    return res.status(400).send("internal server error");
+  }
+});
+
+app.post("/api/conversation", async (req, res) => {
+  try {
+    const { senderid, receiverid } = req.body;
+
+    const existingConversation = await Conversations.findOne({ members: [senderid, receiverid] });
+    if (existingConversation) {
+      return res.status(400).send("Conversation already exists between these users");
+    }
+
+    const sender = await Users.findOne({ _id: senderid });
+    if (!sender) {
+      return res.status(400).send("Invalid sender ID");
+    }
+
+    const receiver = await Users.findOne({ _id: receiverid });
+    if (!receiver) {
+      return res.status(400).send("Invalid receiver ID");
+    }
+
+    const newconversation = new Conversations({
+      members: [senderid, receiverid],
+    });
+
+    await newconversation.save();
+
+    res.status(200).send("Conversation created successfully!");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error"); 
   }
 });
 
