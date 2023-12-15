@@ -76,7 +76,7 @@ app.post("/api/login", async (req, res, next) => {
       user: {
         email: user.email,
         fullname: user.fullname,
-        pass: user.password,
+        // pass: user.password,
       },
       token,
     });
@@ -145,6 +145,69 @@ app.get("/api/conversation/:userid", async (req, res) => {
     console.error(error);
     res.status(500).send("Internal Server Error");
   }
+});
+
+app.post("/api/message", async (req, res) => {
+  try {
+    const { conversationid, senderid, message, receiverid = "" } = req.body;
+    if (!senderid || !message)
+      return res.status(400).json("please fill all required data");
+    if (!conversationid && receiverid) {
+      const newconversation = new Conversations({
+        members: [senderid, receiverid],
+      });
+      await newconversation.save();
+      const newmessage = new Messages({
+        conversationid: newconversation._id,
+        senderid,
+        message,
+      });
+      await newmessage.save();
+      return res.status(200).json("message sent successfully!");
+    }else if(!conversationid && !receiverid){
+      return res.status(400).json("please fill all required data");
+    }
+    const newmessage = new Messages({ conversationid, senderid, message });
+    await newmessage.save();
+    res.status(200).send("message sent successfully!");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("error in sending message!");
+  }
+});
+
+app.get("/api/message/:conversationid", async (req, res) => {
+  try {
+    const conversationid = req.params.conversationid;
+    if (!conversationid) return res.status(200).json([]);
+    const messages = await Messages.find({ conversationid });
+    const messageUserdata = await Promise.all(
+      messages.map(async (message) => {
+        const user = await Users.findById(message.senderid);
+        return {
+          user: { email: user.email, fullname: user.fullname },
+          message: message.message,
+        };
+      })
+    );
+    res.status(200).json(messageUserdata);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("error in geting message!");
+  }
+});
+
+app.get("/api/users", async (req, res) => {
+  const users = await Users.find();
+  const userdata = Promise.all(
+    users.map(async (user) => {
+      return {
+        user: { email: user.email, fullname: user.fullname },
+        userId: user._id,
+      };
+    })
+  );
+  res.status(200).json(await userdata);
 });
 
 app.listen(port, () => {
