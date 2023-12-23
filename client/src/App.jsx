@@ -1,4 +1,5 @@
-import { Form } from "./modules/form";
+import Register from "./modules/form/register";
+import Login from "./modules/form/login";
 import "./App.css";
 import { Dashboard } from "./modules/dashboard";
 import {
@@ -8,11 +9,11 @@ import {
   Navigate,
 } from "react-router-dom";
 
-const Protectedroutes = ({ children }) => {
+const Protectedroutes = ({ children, auth=false }) => {
   const isloggedin = localStorage.getItem("user: token") !== null || true;
 
-  if (!isloggedin) {
-    return <Navigate to={"/user/signup"} />;
+  if (!isloggedin && auth) {
+    return <Navigate to={"/user/register"} />;
   }
 
   return children;
@@ -23,13 +24,13 @@ function App() {
     <div className="bg-[#d7e3ff] h-screen flex justify-center items-center">
       <Router>
         <Routes>
-          <Route path="/user/signup" element={<Form signedin={false} />} />
-          <Route path="/user/register" element={<Form signedin={false} />} />
-          <Route path="/user/signin" element={<Form signedin={true} />} />
+          {/* <Route path="/user/signup" element={<Form  />} /> */}
+          <Route path="/user/register" element={<Register />} />
+          <Route path="/user/login" element={<Login />} />
           <Route
             path="/user/dashboard"
             element={
-              <Protectedroutes>
+              <Protectedroutes auth={true}>
                 <Dashboard />
               </Protectedroutes>
             }
