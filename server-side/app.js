@@ -1,6 +1,7 @@
 const express = require("express");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
 require("./db/index"); //connect to DB
 
@@ -11,6 +12,7 @@ const Messages = require("./schemas/message");
 const port = 3000;
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -74,6 +76,7 @@ app.post("/api/login", async (req, res, next) => {
 
     return res.status(200).json({
       user: {
+        id:user._id,
         email: user.email,
         fullname: user.fullname,
         // pass: user.password,
@@ -164,7 +167,7 @@ app.post("/api/message", async (req, res) => {
       });
       await newmessage.save();
       return res.status(200).json("message sent successfully!");
-    }else if(!conversationid && !receiverid){
+    } else if (!conversationid && !receiverid) {
       return res.status(400).json("please fill all required data");
     }
     const newmessage = new Messages({ conversationid, senderid, message });
