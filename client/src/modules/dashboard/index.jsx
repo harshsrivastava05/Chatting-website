@@ -8,9 +8,12 @@ export const Dashboard = () => {
   const [user, setuser] = useState({});
   const [conversation, setconversation] = useState([])
   const [message, setmessage] = useState({})
+  // const [name, setName] = useState("Contact");
+
+  // setname(message.receiver.fullname || "Contact")
   console.log(conversation)
   console.log(user)
-  console.log(message.receiver.fullname)
+  // console.log(message.receiver.fullname)
   console.log(message.message)
 
   useEffect(() => {
@@ -30,13 +33,13 @@ export const Dashboard = () => {
     fetchConversations();
   }, []);
 
-  const fetchmessages = async (conversationId,user) => {
+  const fetchmessages = async (conversationId, user) => {
     const res = await axios.get(`http://localhost:3000/api/message/${conversationId}`);
-    console.log(conversationId,user);
-    console.log( res.data );
+    console.log(conversationId, user);
+    console.log(res.data);
     setmessage({ message: res.data, receiver: user });
   };
- 
+
   return (
     <div className="w-screen flex">
       <div className="w-[25%] h-screen bg-slate-200 ">
@@ -56,7 +59,7 @@ export const Dashboard = () => {
             {conversation.length > 0 ?
               conversation.map(({ conversationId, user }) => {
                 return (
-                  <div className="flex mt-7 pl-7 border border-b-gray-400 pb-[12px] cursor-pointer items-center" onClick={() => { fetchmessages(conversationId,user) }}>
+                  <div className="flex mt-7 pl-7 border border-b-gray-400 pb-[12px] cursor-pointer items-center" onClick={() => { fetchmessages(conversationId, user) }}>
                     <div className="border p-1 border-black rounded-full">
                       {<Avatar2 />}
                     </div>
@@ -77,15 +80,22 @@ export const Dashboard = () => {
       <div className="w-[50%] h-screen bg-white flex flex-col items-center">
         <div className="bg-slate-200 w-[75%] h-[120px] shadow-sm rounded-full my-4 flex items-center px-4">
           <div className="flex items-center justify-between w-full">
+
             <div className="flex justify-center cursor-pointer">
               <Avatar />
-              <div className="ml-3">
-                <h3 className="text-lg">{message.receiver.fullname}</h3>
-                <p className="text-sm font-light mt-[-7px] text-gray-600">
-                  online
-                </p>
-              </div>
+              {message.receiver?.fullname !== undefined ? (
+                <div className="ml-3">
+                  <h3 className="text-lg">{message.receiver?.fullname}</h3>
+                  <p className="text-sm font-light mt-[-7px] text-gray-600">online</p>
+                </div>
+              ) : (
+                <div className="ml-3">
+                  <h3 className="text-lg">Contact</h3>
+                  <p className="text-sm font-light mt-[-7px] text-gray-600">online</p>
+                </div>
+              )}
             </div>
+
             <div className="mr-6 flex cursor-pointer space-x-4">
               <Phone />
               <Video />
