@@ -8,13 +8,13 @@ export const Dashboard = () => {
   const [user, setuser] = useState({});
   const [conversation, setconversation] = useState([])
   const [message, setmessage] = useState({})
-  // const [name, setName] = useState("Contact");
+  const [conversationid, setconversationid] = useState("")
+  const [text, settext] = useState("")
 
-  // setname(message.receiver.fullname || "Contact")
   console.log(conversation)
   console.log(user)
-  // console.log(message.receiver.fullname)
-  console.log(message.message)
+  console.log(message?.receiver)
+  console.log(message)
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -33,12 +33,26 @@ export const Dashboard = () => {
     fetchConversations();
   }, []);
 
+ 
+
   const fetchmessages = async (conversationId, user) => {
     const res = await axios.get(`http://localhost:3000/api/message/${conversationId}`);
     console.log(conversationId, user);
+    setconversationid(conversationId)
     console.log(res.data);
-    setmessage({ message: res.data, receiver: user });
+    setmessage({ message: res.data, receiver: user, conversationId });
   };
+
+  const sendmessage = async () => {
+    const res = await axios.post(`http://localhost:3000/api/message`, {
+      senderid: user.id,
+      conversationid: conversationid,
+      message:text,
+      receiverid:message?.receiver?.receiverid
+    })
+    console.log(res.data);
+   settext('')
+  }
 
   return (
     <div className="w-screen flex">
@@ -81,21 +95,23 @@ export const Dashboard = () => {
         <div className="bg-slate-200 w-[75%] h-[120px] shadow-sm rounded-full my-4 flex items-center px-4">
           <div className="flex items-center justify-between w-full">
 
-            <div className="flex justify-center cursor-pointer">
-              <Avatar />
-              {message.receiver?.fullname !== undefined ? (
+            {message.receiver?.fullname !== undefined ? (
+              <div className="flex justify-center cursor-pointer">
+                <Avatar />
                 <div className="ml-3">
                   <h3 className="text-lg">{message.receiver?.fullname}</h3>
-                  <p className="text-sm font-light mt-[-7px] text-gray-600">online</p>
+                  <p className="text-sm font-light mt-[-7px] text-gray-600">{message.receiver?.email}</p>
                 </div>
-              ) : (
+              </div>
+            ) : (
+              <div className="flex justify-center cursor-pointer">
+                <Avatar />
                 <div className="ml-3">
                   <h3 className="text-lg">Contact</h3>
-                  <p className="text-sm font-light mt-[-7px] text-gray-600">online</p>
+                  <p className="text-sm font-light mt-[-7px] text-gray-600">E-mail</p>
                 </div>
-              )}
-            </div>
-
+              </div>
+            )}
             <div className="mr-6 flex cursor-pointer space-x-4">
               <Phone />
               <Video />
@@ -132,13 +148,18 @@ export const Dashboard = () => {
             placeholder="Type a message.."
             inputClassname="w-full border rounded-full outline-none  shadow-lg"
             className="w-full"
+            value={text}
+            onChange={(e) => {
+              settext(e.target.value)
+            }}
           />
           <div className="p-2 ml-4 mb-4 w-12 rounded-3xl bg-sky-400 mt-6 cursor-pointer border">
             <Link />
           </div>
-          <div className="p-2 mb-4 ml-2 w-12 rounded-3xl bg-sky-400 mt-6 cursor-pointer border">
-            <Send />
-          </div>
+          <div className={`p-2 mb-4 ml-2 w-12 rounded-3xl bg-sky-400 mt-6 cursor-pointer ${!text && 'pointer-events-none'} border`} onClick={sendmessage}>
+  <Send />
+</div>
+
         </div>
       </div>
 
