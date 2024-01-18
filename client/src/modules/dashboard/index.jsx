@@ -4,58 +4,39 @@ import { Input } from "../../components/inputs";
 import axios from "axios";
 
 export const Dashboard = () => {
-  const contacts = [
-    {
-      name: "harsh",
-      description: "avalable",
-      image: <Avatar2 />,
-    },
-    {
-      name: "manya",
-      description: "avalable",
-      image: <Avatar2 />,
-    },
-    {
-      name: "aryan",
-      description: "avalable",
-      image: <Avatar2 />,
-    },
-    {
-      name: "arsh",
-      description: "avalable",
-      image: <Avatar2 />,
-    },
-    {
-      name: "anya",
-      description: "avalable",
-      image: <Avatar2 />,
-    },
-    {
-      name: "arya",
-      description: "avalable",
-      image: <Avatar2 />,
-    },
-  ];
 
-    useEffect(() => {
+  const [user, setuser] = useState({});
+  const [conversation, setconversation] = useState([])
+  const [message, setmessage] = useState({})
+  console.log(conversation)
+  console.log(user)
+  console.log(message.receiver.fullname)
+  console.log(message.message)
+
+  useEffect(() => {
     const fetchConversations = async () => {
       try {
         const isLoggedUser = JSON.parse(localStorage.getItem("user:details"));
+        setuser(isLoggedUser)
         const res = await axios.get(`http://localhost:3000/api/conversation/${isLoggedUser.id}`);
         const resData = res.data;
+        // console.log(resData)
         setconversation(resData);
+        // console.log(conversation)
       } catch (error) {
         console.error("Axios error: ", error);
       }
     };
-
     fetchConversations();
   }, []);
 
-  const [user, setuser] = useState(JSON.parse(localStorage.getItem("user:details")));
-  const [conversation, setconversation] = useState([])
-  console.log(user)
-
+  const fetchmessages = async (conversationId,user) => {
+    const res = await axios.get(`http://localhost:3000/api/message/${conversationId}`);
+    console.log(conversationId,user);
+    console.log( res.data );
+    setmessage({ message: res.data, receiver: user });
+  };
+ 
   return (
     <div className="w-screen flex">
       <div className="w-[25%] h-screen bg-slate-200 ">
@@ -72,21 +53,23 @@ export const Dashboard = () => {
             Messages
           </div>
           <div>
-            {contacts.map(({ name, description, image }) => {
-              return (
-                <div className="flex mt-7 pl-7 border border-b-gray-400 pb-[12px] cursor-pointer items-center">
-                  <div className="border p-1 border-black rounded-full">
-                    {image}
+            {conversation.length > 0 ?
+              conversation.map(({ conversationId, user }) => {
+                return (
+                  <div className="flex mt-7 pl-7 border border-b-gray-400 pb-[12px] cursor-pointer items-center" onClick={() => { fetchmessages(conversationId,user) }}>
+                    <div className="border p-1 border-black rounded-full">
+                      {<Avatar2 />}
+                    </div>
+                    <div className="ml-2">
+                      <h3 className="text-lg">{user?.fullname}</h3>
+                      <p className="text-sm font-light text-gray-600">
+                        {user?.email}
+                      </p>
+                    </div>
                   </div>
-                  <div className="ml-2">
-                    <h3 className="text-lg">{name}</h3>
-                    <p className="text-sm font-light text-gray-600">
-                      {description}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              }) : <div className="text-center text-lg font-semibold mt-24"> No conversation</div>
+            }
           </div>
         </div>
       </div>
@@ -97,7 +80,7 @@ export const Dashboard = () => {
             <div className="flex justify-center cursor-pointer">
               <Avatar />
               <div className="ml-3">
-                <h3 className="text-lg">Harsh</h3>
+                <h3 className="text-lg">{message.receiver.fullname}</h3>
                 <p className="text-sm font-light mt-[-7px] text-gray-600">
                   online
                 </p>
@@ -109,17 +92,30 @@ export const Dashboard = () => {
             </div>
           </div>
         </div>
-        <div className="w-full max-h-[90%] border border-b overflow-auto">
+        <div className="w-full max-h-[90%] border border-b overflow-auto ">
           <div className="p-12 h-[1000px]">
-            <div className="p-4 max-w-[45%] bg-slate-200 mb-4 rounded-b-2xl rounded-tr-2xl">
-              To create a production buildTo create a production buildTo create
-              a production build
-            </div>
-            <div className="p-4 min-w-[50px ] text-white max-w-[45%] bg-sky-500 mb-4 rounded-b-2xl rounded-tl-2xl mt-4 ml-auto">
-              To create a production buildTo create a production build
-            </div>
+            {message?.message?.length > 0 ? (
+              message.message.map(({ message, user: { id } = {} }) => {
+                if (id === user?.id) {
+                  return (
+                    <div className="p-4 min-w-[50px ] text-white max-w-[45%] bg-sky-500 mb-4 rounded-b-2xl rounded-tl-2xl mt-4 ml-auto">
+                      {message}
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="p-4 max-w-[45%] bg-slate-200 mb-4 rounded-b-2xl rounded-tr-2xl">
+                      {message}
+                    </div>
+                  );
+                }
+              })
+            ) : (
+              <div className="text-center text-lg font-semibold mt-24">No messages</div>
+            )}
           </div>
         </div>
+
 
         <div className="p-4 w-[80%] flex items-center justify-between ">
           <Input
