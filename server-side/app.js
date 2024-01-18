@@ -59,7 +59,7 @@ app.post("/api/login", async (req, res, next) => {
 
     const user = await Users.findOne({ email });
     if (!user) {
-      return res.status(400).send("User email or password not found!");
+      return res.status(400).send("User email not found!");
     }
 
     const validateuser = await bcryptjs.compare(password, user.password);
@@ -79,7 +79,6 @@ app.post("/api/login", async (req, res, next) => {
         id:user._id,
         email: user.email,
         fullname: user.fullname,
-        // pass: user.password,
       },
       token,
     });
@@ -92,7 +91,6 @@ app.post("/api/login", async (req, res, next) => {
 app.post("/api/conversation", async (req, res) => {
   try {
     const { senderid, receiverid } = req.body;
-
     const existingConversation = await Conversations.findOne({
       members: [senderid, receiverid],
     });
@@ -138,7 +136,7 @@ app.get("/api/conversation/:userid", async (req, res) => {
         );
         const user = await Users.findById(receiverid);
         return {
-          user: { email: user.email, fullname: user.fullname },
+          user: {receiverid:user._id, email: user.email, fullname: user.fullname },
           conversationId: conversation._id,
         };
       })
@@ -188,7 +186,7 @@ app.get("/api/message/:conversationid", async (req, res) => {
       messages.map(async (message) => {
         const user = await Users.findById(message.senderid);
         return {
-          user: { email: user.email, fullname: user.fullname },
+          user: {id:user._id, email: user.email, fullname: user.fullname },
           message: message.message,
         };
       })
