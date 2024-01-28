@@ -9,16 +9,6 @@ import {
   Navigate,
 } from "react-router-dom";
 
-const Protectedroutes = ({ children, auth=false }) => {
-  const isloggedin = localStorage.getItem("user: token") !== null || true;
-
-  if (!isloggedin && auth) {
-    return <Navigate to={"/user/register"} />;
-  }
-
-  return children;
-};
-
 function App() {
   return (
     <div className="bg-[#d7e3ff] h-screen flex justify-center items-center">
@@ -40,5 +30,15 @@ function App() {
     </div>
   );
 }
+
+const Protectedroutes = ({ children, auth }) => {
+  const isloggedin = localStorage.getItem("user: token") !== null || true;
+
+  if (!isloggedin && auth) {
+    return <Navigate to={"/user/register"} />;
+  }
+
+  return children;
+};
 
 export default App;
