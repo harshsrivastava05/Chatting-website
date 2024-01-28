@@ -2,19 +2,63 @@ import { useEffect, useState } from "react";
 import { Avatar, Avatar2, Link, Phone, Send, Video } from "../../assets/avatar";
 import { Input } from "../../components/inputs";
 import axios from "axios";
+import { io } from "socket.io-client"
 
 export const Dashboard = () => {
 
   const [user, setuser] = useState({});
   const [conversation, setconversation] = useState([])
-  const [message, setmessage] = useState({})
+  const [message, setmessage] = useState([])
+  // const [messages, setmessages] = useState({})
   const [conversationid, setconversationid] = useState("")
   const [text, settext] = useState("")
+  const [users, setusers] = useState([])
+  const [state, setstate] = useState(false)
+  const [socket, setsocket] = useState(null)
+  const [User, setUser] = useState([])
 
-  console.log(conversation)
-  console.log(user)
-  console.log(message?.receiver)
-  console.log(message)
+  // console.log("conversations =>", conversation)
+  // console.log("user =>", user)
+  // console.log("messages receiver>>", message?.receiver)
+  // console.log("messages message>>", message?.message)
+  // console.log("message =>", message)
+  // console.log("users => ", users)
+  console.log("messages>>", message)
+  // console.log("userid>>",user.id)
+
+  useEffect(() => {
+    setsocket(io('http://localhost:8000'));
+  }, [])
+
+  useEffect(() => {
+    socket?.on('getMessage', data => {
+      // console.log("data:", data);
+      setmessage(prev => ({
+        ...prev,
+        message: [...prev.message, { user: data.user, message: data.message }]
+      }));
+    });
+    console.log("socket change >>", message)
+  }, [socket]);
+
+  useEffect(() => {
+    socket?.emit('addUser', user.id);
+
+    socket?.on('getUser', updatedUsers => {
+      console.log("active users:", updatedUsers);
+      setUser(updatedUsers);
+    });
+  }, [socket, user.id]);
+
+
+  useEffect(() => {
+    async function fetchusers() {
+      const res = await axios.get(`http://localhost:3000/api/users`)
+      const resData = res.data
+      setusers(resData)
+    }
+    fetchusers()
+  }, [])
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -31,27 +75,50 @@ export const Dashboard = () => {
       }
     };
     fetchConversations();
-  }, []);
+  }, [state]);
 
- 
+  const createconvo = async (userId, user) => {
+    try {
+      setstate(true)
+      const isLoggedUser = JSON.parse(localStorage.getItem("user:details"));
+      const ids = {
+        senderid: isLoggedUser.id,
+        receiverid: userId
+      };
+      const res = await axios.post(`http://localhost:3000/api/conversation`, ids);
+      console.log(res.data);
+      setstate(false)
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+    }
+  };
 
   const fetchmessages = async (conversationId, user) => {
     const res = await axios.get(`http://localhost:3000/api/message/${conversationId}`);
-    console.log(conversationId, user);
+    // console.log(conversationId, user);
     setconversationid(conversationId)
-    console.log(res.data);
+    socket?.emit('addreciever', user.receiverid);
+    // console.log(res.data);
     setmessage({ message: res.data, receiver: user, conversationId });
+    // console.log(message)
   };
 
   const sendmessage = async () => {
+    socket.emit('sendMessage', {
+      senderid: user.id,
+      conversationid: conversationid,
+      message: text,
+      receiverid: message?.receiver?.receiverid
+    })
     const res = await axios.post(`http://localhost:3000/api/message`, {
       senderid: user.id,
       conversationid: conversationid,
-      message:text,
-      receiverid:message?.receiver?.receiverid
+      message: text,
+      receiverid: message?.receiver?.receiverid
     })
     console.log(res.data);
-   settext('')
+    settext('')
+
   }
 
   return (
@@ -66,14 +133,14 @@ export const Dashboard = () => {
         </div>
         <hr />
         <div className="mx-10">
-          <div className="flex justify-center pl-10 font-semibold text-sky-50û text-xl">
+          <div className="flex justify-center pl-10 font-semibold text-sky-500 text-xl">
             Messages
           </div>
           <div>
             {conversation.length > 0 ?
               conversation.map(({ conversationId, user }) => {
                 return (
-                  <div className="flex mt-7 pl-7 border border-b-gray-400 pb-[12px] cursor-pointer items-center" onClick={() => { fetchmessages(conversationId, user) }}>
+                  <div className="flex w-[300px] mt-7 pt-2 pl-7 border  rounded-full shadow-xl border-zinc-100 pb-[12px] cursor-pointer items-center" onClick={() => { fetchmessages(conversationId, user) }}>
                     <div className="border p-1 border-black rounded-full">
                       {<Avatar2 />}
                     </div>
@@ -157,13 +224,34 @@ export const Dashboard = () => {
             <Link />
           </div>
           <div className={`p-2 mb-4 ml-2 w-12 rounded-3xl bg-sky-400 mt-6 cursor-pointer ${!text && 'pointer-events-none'} border`} onClick={sendmessage}>
-  <Send />
-</div>
+            <Send />
+          </div>
 
         </div>
       </div>
 
-      <div className="w-[25%] h-screen"></div>
+      <div className="w-[25%] h-screen">
+        <div className="flex justify-center pl-10 mt-8  font-semibold text-sky-700  pb-4 border-b text-xl">
+          Peoples
+        </div>
+        {users.length > 0 ?
+          users.map(({ userId, user }) => {
+            return (
+              <div className="flex mt-7 pt-2 pl-7 border  rounded-full shadow-xl border-zinc-100 pb-[12px] cursor-pointer items-center" onClick={() => { createconvo(userId, user) }}>
+                <div className="border p-1 border-black rounded-full">
+                  {<Avatar2 />}
+                </div>
+                <div className="ml-2">
+                  <h3 className="text-lg">{user?.fullname}</h3>
+                  <p className="text-sm font-light text-gray-600">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+            );
+          }) : <div className="text-center text-lg font-semibold mt-24"> No users</div>
+        }
+      </div>
     </div>
   );
 };
