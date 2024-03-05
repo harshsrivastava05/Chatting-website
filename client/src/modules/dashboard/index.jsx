@@ -9,22 +9,12 @@ export const Dashboard = () => {
   const [user, setuser] = useState({});
   const [conversation, setconversation] = useState([])
   const [message, setmessage] = useState([])
-  // const [messages, setmessages] = useState({})
   const [conversationid, setconversationid] = useState("")
   const [text, settext] = useState("")
   const [users, setusers] = useState([])
   const [state, setstate] = useState(false)
   const [socket, setsocket] = useState(null)
   const [User, setUser] = useState([])
-
-  // console.log("conversations =>", conversation)
-  // console.log("user =>", user)
-  // console.log("messages receiver>>", message?.receiver)
-  // console.log("messages message>>", message?.message)
-  // console.log("message =>", message)
-  // console.log("users => ", users)
-  console.log("messages>>", message)
-  // console.log("userid>>",user.id)
 
   useEffect(() => {
     setsocket(io('http://localhost:8000'));
