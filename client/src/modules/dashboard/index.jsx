@@ -34,9 +34,9 @@ export const Dashboard = () => {
   useEffect(() => {
     socket?.emit('addUser', user.id);
 
-    socket?.on('getUser', updatedUsers => {
-      console.log("active users:", updatedUsers);
-      setUser(updatedUsers);
+    socket?.on('getUser', activeusers => {
+      console.log("active users:", activeusers);
+      setUser(activeusers);
     });
   }, [socket, user.id]);
 
